@@ -16,12 +16,14 @@ DIR_REQUEST, DIR_RESPONSE = 'REQUEST', 'RESPONSE'
 
 def _argparse():
     parse = argparse.ArgumentParser()
-    parse.add_argument("-server_ip", default='', action='store', required=False, dest="server_ip",
+    parse.add_argument("-server_ip", default='127.0.0.1', action='store', required=False, dest="server_ip",
                        help="The IP address bind to the server. Default bind all IP.")
-    parse.add_argument("-id", default='2034590', action='store', required=False, dest="id",
+    parse.add_argument("-port", default=1379, action='store', required=False, dest="port",
                        help="The port that server listen on. Default is 1379.")
+    parse.add_argument("-id", default='2034590', action='store', required=False, dest="id",
+                       help="Your ID")
     parse.add_argument("-f", default='', action='store', required=False, dest="file",
-                       help="The file for server.")
+                       help="The file path. Default is empty (no file will be uploaded)")
     return parse.parse_args()
 
 
@@ -30,7 +32,7 @@ class TCPClient:
         self.__ip = parser.server_ip
         self.__id = parser.id
         self.__file = parser.file
-        self.__port = 1379
+        self.__port = parser.port
         self.__client_socket = socket(AF_INET, SOCK_STREAM)
         self.__client_socket.connect((self.__ip, self.__port))
 
