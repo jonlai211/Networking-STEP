@@ -26,23 +26,19 @@ def _argparse():
 
 
 class TCPClient:
-    # default values
-    __ip = "127.0.0.1"
-    __id = "2034590"
-    __file = "file.bin"
-    __port = 1379
-
     def __init__(self, parser):
-        self.parser = parser
-        __ip = parser.server_ip
-        __id = parser.id
-        __file = parser.file
+        self.__ip = parser.server_ip
+        self.__id = parser.id
+        self.__file = parser.file
+        self.__port = 1379
+        self.__client_socket = socket(AF_INET, SOCK_STREAM)
+        self.__client_socket.connect((self.__ip, self.__port))
 
-    def get_tcp_packet(self, conn):
+    def __get_packet(self):
         # 1. get length of json_data and length of bin_data
         bin_data = b''
         while len(bin_data) < 8:
-            data_rec = conn.recv(8)  # 8 bytes
+            data_rec = self.__client_socket.recv(8)  # 8 bytes
             if data_rec == b'':
                 time.sleep(0.01)
             if data_rec == b'':
@@ -54,7 +50,7 @@ class TCPClient:
 
         # 2. get json_data
         while len(bin_data) < j_len:
-            data_rec = conn.recv(j_len)
+            data_rec = self.__client_socket.recv(j_len)
             if data_rec == b'':
                 time.sleep(0.01)
             if data_rec == b'':
@@ -70,7 +66,7 @@ class TCPClient:
         # 3. get bin_data
         bin_data = bin_data[j_len:]  # clear list
         while len(bin_data) < b_len:
-            data_rec = conn.recv(b_len)
+            data_rec = self.__client_socket.recv(b_len)
             if data_rec == b'':
                 time.sleep(0.01)
             if data_rec == b'':
@@ -78,7 +74,7 @@ class TCPClient:
             bin_data += data_rec
         return json_data, bin_data
 
-    def make_packet(self, json_data, bin_data=None):
+    def __make_packet(self, json_data, bin_data=None):
         j = json.dumps(dict(json_data), ensure_ascii=False)
         j_len = len(j)
         if bin_data is None:
@@ -86,59 +82,55 @@ class TCPClient:
         else:
             return struct.pack('!II', j_len, len(bin_data)) + j.encode() + bin_data
 
-    def make_request_packet(self, data_type, operation, json_data, bin_data=None):
+    def __make_request_packet(self, data_type, operation, json_data, bin_data=None):
         json_data[FIELD_TYPE] = data_type
         json_data[FIELD_OPERATION] = operation
         json_data[FIELD_DIRECTION] = DIR_REQUEST
 
-        return self.make_packet(json_data, bin_data)
+        return self.__make_packet(json_data, bin_data)
 
-    def comm(self, ip=__ip, id=__id, port=__port, file=__file):
-        tcp_addr = (ip, port)
-        client_socket = socket(AF_INET, SOCK_STREAM)  # TCP
-        client_socket.connect(tcp_addr)
-
-        client_socket.send(
-            self.make_request_packet(TYPE_AUTH, OP_LOGIN, {
-                FIELD_USERNAME: id,
-                FIELD_PASSWORD: hashlib.md5(id.encode()).hexdigest().lower()
+    def comm(self):
+        self.__client_socket.send(
+            self.__make_request_packet(TYPE_AUTH, OP_LOGIN, {
+                FIELD_USERNAME: self.__id,
+                FIELD_PASSWORD: hashlib.md5(self.__id.encode()).hexdigest().lower()
             })
         )
-        json_data_recv, bin_data = self.get_tcp_packet(client_socket)
+        json_data_recv, bin_data = self.__get_packet()
         token = json_data_recv[FIELD_TOKEN]
         print(f'Token: {json_data_recv[FIELD_TOKEN]}')
 
-        client_socket.send(
-            self.make_request_packet(TYPE_FILE, OP_SAVE, {
+        self.__client_socket.send(
+            self.__make_request_packet(TYPE_FILE, OP_SAVE, {
                 FIELD_TOKEN: token,
-                FIELD_KEY: file,
-                FIELD_SIZE: len(open(file, 'rb').read())
+                FIELD_KEY: self.__file,
+                FIELD_SIZE: len(open(self.__file, 'rb').read())
             })
         )
-        json_data_recv, bin_data = self.get_tcp_packet(client_socket)
+        json_data_recv, bin_data = self.__get_packet()
         print(json_data_recv)
 
         block_index = 0
-        with open(file, 'rb') as f:
+        with open(self.__file, 'rb') as f:
             while True:
                 file_data = f.read(20480)
                 if not file_data:
                     break
 
-                client_socket.send(
-                    self.make_request_packet(TYPE_FILE, OP_UPLOAD, {
+                self.__client_socket.send(
+                    self.__make_request_packet(TYPE_FILE, OP_UPLOAD, {
                         FIELD_TOKEN: token,
-                        FIELD_KEY: file,
+                        FIELD_KEY: self.__file,
                         FIELD_SIZE: len(file_data),
                         FIELD_BLOCK_INDEX: block_index
                     }, file_data)
                 )
 
                 block_index += 1
-                json_data_recv, bin_data = self.get_tcp_packet(client_socket)
+                json_data_recv, bin_data = self.__get_packet()
                 print(json_data_recv)
 
-        client_socket.close()
+        self.__client_socket.close()
 
 
 def main():
