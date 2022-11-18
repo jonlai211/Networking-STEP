@@ -5,6 +5,8 @@ import json
 import time
 import hashlib
 
+MAX_PACKET_SIZE = 20480
+
 # Const Value
 OP_SAVE, OP_DELETE, OP_GET, OP_UPLOAD, OP_DOWNLOAD, OP_BYE, OP_LOGIN, OP_ERROR = 'SAVE', 'DELETE', 'GET', 'UPLOAD', 'DOWNLOAD', 'BYE', 'LOGIN', "ERROR"
 TYPE_FILE, TYPE_DATA, TYPE_AUTH, DIR_EARTH = 'FILE', 'DATA', 'AUTH', 'EARTH'
@@ -16,18 +18,19 @@ DIR_REQUEST, DIR_RESPONSE = 'REQUEST', 'RESPONSE'
 
 def _argparse():
     parse = argparse.ArgumentParser()
-    parse.add_argument("-server_ip", default='127.0.0.1', action='store', required=False, dest="server_ip",
+    parse.add_argument("-server_ip", "--server_ip", default='127.0.0.1', action='store', required=False,
+                       dest="server_ip",
                        help="The IP address bind to the server. Default bind all IP.")
-    parse.add_argument("-port", default=1379, action='store', required=False, dest="port",
+    parse.add_argument("-port", "--port", default=1379, action='store', required=False, dest="port",
                        help="The port that server listen on. Default is 1379.")
-    parse.add_argument("-id", default='2034590', action='store', required=False, dest="id",
+    parse.add_argument("-id", "--id", default='2034590', action='store', required=False, dest="id",
                        help="Your ID")
-    parse.add_argument("-f", default='', action='store', required=False, dest="file",
+    parse.add_argument("-f", "--f", default='', action='store', required=False, dest="file",
                        help="The file path. Default is empty (no file will be uploaded)")
     return parse.parse_args()
 
 
-class TCPClient:
+class TCP_Client:
     def __init__(self, parser):
         self.__ip = parser.server_ip
         self.__id = parser.id
@@ -112,10 +115,11 @@ class TCPClient:
         json_data_recv, bin_data = self.__get_packet()
         print(json_data_recv)
 
+# TODO: MutilThreading
         block_index = 0
         with open(self.__file, 'rb') as f:
             while True:
-                file_data = f.read(20480)
+                file_data = f.read(MAX_PACKET_SIZE)
                 if not file_data:
                     break
 
@@ -137,8 +141,8 @@ class TCPClient:
 
 def main():
     parser = _argparse()
-    tcp = TCPClient(parser)
-    tcp.comm()
+    tcp_client = TCP_Client(parser)
+    tcp_client.comm()
 
 
 if __name__ == '__main__':
