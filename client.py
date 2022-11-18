@@ -1,3 +1,4 @@
+import socket
 from socket import *
 import struct
 import argparse
@@ -95,48 +96,55 @@ class TCP_Client:
         return self.__make_packet(json_data, bin_data)
 
     def comm(self):
-        self.__client_socket.send(
-            self.__make_request_packet(TYPE_AUTH, OP_LOGIN, {
-                FIELD_USERNAME: self.__id,
-                FIELD_PASSWORD: hashlib.md5(self.__id.encode()).hexdigest().lower()
-            })
-        )
-        json_data_recv, bin_data = self.__get_packet()
-        token = json_data_recv[FIELD_TOKEN]
-        print(f'Token: {json_data_recv[FIELD_TOKEN]}')
+        try:
+            self.__client_socket.send(
+                self.__make_request_packet(TYPE_AUTH, OP_LOGIN, {
+                    FIELD_USERNAME: self.__id,
+                    FIELD_PASSWORD: hashlib.md5(self.__id.encode()).hexdigest().lower()
+                })
+            )
+            json_data_recv, bin_data = self.__get_packet()
+            token = json_data_recv[FIELD_TOKEN]
+            print(f'Token: {json_data_recv[FIELD_TOKEN]}')
 
-        self.__client_socket.send(
-            self.__make_request_packet(TYPE_FILE, OP_SAVE, {
-                FIELD_TOKEN: token,
-                FIELD_KEY: self.__file,
-                FIELD_SIZE: len(open(self.__file, 'rb').read())
-            })
-        )
-        json_data_recv, bin_data = self.__get_packet()
-        print(json_data_recv)
+            self.__client_socket.send(
+                self.__make_request_packet(TYPE_FILE, OP_SAVE, {
+                    FIELD_TOKEN: token,
+                    FIELD_KEY: self.__file,
+                    FIELD_SIZE: len(open(self.__file, 'rb').read())
+                })
+            )
+            json_data_recv, bin_data = self.__get_packet()
+            print(json_data_recv)
 
-# TODO: MutilThreading
-        block_index = 0
-        with open(self.__file, 'rb') as f:
-            while True:
-                file_data = f.read(MAX_PACKET_SIZE)
-                if not file_data:
-                    break
+        # TODO: MutilThreading
+            block_index = 0
+            with open(self.__file, 'rb') as f:
+                while True:
+                    file_data = f.read(MAX_PACKET_SIZE)
+                    if not file_data:
+                        break
 
-                self.__client_socket.send(
-                    self.__make_request_packet(TYPE_FILE, OP_UPLOAD, {
-                        FIELD_TOKEN: token,
-                        FIELD_KEY: self.__file,
-                        FIELD_SIZE: len(file_data),
-                        FIELD_BLOCK_INDEX: block_index
-                    }, file_data)
-                )
+                    self.__client_socket.send(
+                        self.__make_request_packet(TYPE_FILE, OP_UPLOAD, {
+                            FIELD_TOKEN: token,
+                            FIELD_KEY: self.__file,
+                            FIELD_SIZE: len(file_data),
+                            FIELD_BLOCK_INDEX: block_index
+                        }, file_data)
+                    )
 
-                block_index += 1
-                json_data_recv, bin_data = self.__get_packet()
-                print(json_data_recv)
+                    block_index += 1
+                    json_data_recv, bin_data = self.__get_packet()
+                    print(json_data_recv)
 
-        self.__client_socket.close()
+            self.__client_socket.close()
+        except socket.error as se:
+            print(f'Socket Error: {str(se)}')
+        except Exception as e:
+            print(f'Socket Error: {str(e)}')
+        finally:
+            self.__client_socket.close()
 
 
 def main():
