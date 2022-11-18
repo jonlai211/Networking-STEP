@@ -80,7 +80,8 @@ class TCP_Client:
             bin_data += data_rec
         return json_data, bin_data
 
-    def __make_packet(self, json_data, bin_data=None):
+    @staticmethod
+    def __make_packet(json_data, bin_data=None):
         j = json.dumps(dict(json_data), ensure_ascii=False)
         j_len = len(j)
         if bin_data is None:
@@ -117,7 +118,6 @@ class TCP_Client:
             json_data_recv, bin_data = self.__get_packet()
             print(json_data_recv)
 
-        # TODO: MutilThreading
             block_index = 0
             with open(self.__file, 'rb') as f:
                 while True:
@@ -142,7 +142,7 @@ class TCP_Client:
         except socket.error as se:
             print(f'Socket Error: {str(se)}')
         except Exception as e:
-            print(f'Socket Error: {str(e)}')
+            print(f'Other Exception: {str(e)}')
         finally:
             self.__client_socket.close()
 

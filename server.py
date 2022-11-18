@@ -149,23 +149,18 @@ def get_tcp_packet(conn):
         bin_data
     """
 
-    # 1. get length of json_data and length of bin_data
     bin_data = b''
     while len(bin_data) < 8:
-        data_rec = conn.recv(8)  # 8 bytes
+        data_rec = conn.recv(8)
         if data_rec == b'':
             time.sleep(0.01)
         if data_rec == b'':
             return None, None
         bin_data += data_rec
-    data = bin_data[:8]  # 0-7
-    bin_data = bin_data[8:]  # 8-end, clear list
+    data = bin_data[:8]
+    bin_data = bin_data[8:]
     j_len, b_len = struct.unpack('!II', data)
-    # IETF RFC 1700
-    # ！: big - endian, std.size & alignment
-    # I: integer: 4 bytes
 
-    # 2. get json_data
     while len(bin_data) < j_len:
         data_rec = conn.recv(j_len)
         if data_rec == b'':
@@ -180,8 +175,8 @@ def get_tcp_packet(conn):
     except Exception as ex:
         return None, None
 
-    # 3. get bin_data
-    bin_data = bin_data[j_len:]  # clear list
+
+    bin_data = bin_data[j_len:]
     while len(bin_data) < b_len:
         data_rec = conn.recv(b_len)
         if data_rec == b'':
@@ -225,7 +220,7 @@ def data_process(username, request_operation, json_data, connection_socket):
             logger.error(f'{str(ex)}@{ex.__traceback__.tb_lineno}')
 
     if request_operation == OP_SAVE:
-        key = str(uuid.uuid4())  # get a random key
+        key = str(uuid.uuid4())
         if FIELD_KEY in json_data.keys():
             key = json_data[FIELD_KEY]
         logger.info(f'--> Save data with key "{key}"')
@@ -318,7 +313,7 @@ def file_process(username, request_operation, json_data, bin_data, connection_so
         return
 
     if request_operation == OP_SAVE:
-        key = str(uuid.uuid4())  # generate a random key
+        key = str(uuid.uuid4())
         if FIELD_KEY in json_data.keys():
             key = json_data[FIELD_KEY]
         logger.info(f'--> Plan to save/upload a file with key "{key}"')
@@ -682,7 +677,6 @@ def tcp_listener(server_ip, server_port):
     global logger
     # bug-6: SOCK_DGRAM ---> SOCK_STREAM
     server_socket = socket(AF_INET, SOCK_STREAM)
-    # setsockopt(level, optname, value)
     server_socket.setsockopt(SOL_SOCKET, SO_REUSEADDR, 1)
     server_socket.bind((server_ip, int(server_port)))
     server_socket.listen(20)

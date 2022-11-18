@@ -20,7 +20,9 @@ cd $BM_DIR
 echo "1. Generating $n random binary file(s)"
 for ((i=1; i<=$n; i++))
 do
-	perl -ne 'print unpack("b*")' < /dev/urandom | head -c$size > ./file$i.bin
+	perl -ne 'print unpack("b*")' < /dev/urandom | head -c$size > file$i.bin
+	
+	md5sum file$i.bin >> md5.txt
 done
 
 echo "2. Transferring $n random binary file(s)"
