@@ -1,6 +1,6 @@
 #!/bin/zsh
 
-# TIMEFMT=$'%*U\n%*S'
+TIMEFMT=$'%*U\n%*S'
 
 echo "This is the Benchmark for CAN201 Networking Assessment."
 echo "starting..."
