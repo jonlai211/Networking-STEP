@@ -1,4 +1,6 @@
-#!/bin/bash
+#!/bin/zsh
+
+# TIMEFMT=$'%*U\n%*S'
 
 echo "This is the Benchmark for CAN201 Networking Assessment."
 echo "starting..."
@@ -28,7 +30,7 @@ done
 echo "2. Transferring $n random binary file(s)"
 for ((i=1; i<=$n; i++))
 do
-	{ time python ../client.py --server_ip $ip --id $id --f ./file$i.bin; } > result.txt 2> time.txt
+	{ time python ../client.py --server_ip $ip --id $id --f ./file$i.bin; } >> result.txt 2>> time.txt
 done
 
 echo "closing..."
