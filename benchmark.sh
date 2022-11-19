@@ -15,7 +15,7 @@ done
 
 BM_DIR=./Benchmark
 test -d $BM_DIR || mkdir $BM_DIR
-cd $BM_DIR
+cd $BM_DIR || exit
 
 echo "1. Generating $n random binary file(s)"
 for ((i=1; i<=$n; i++))
@@ -28,7 +28,7 @@ done
 echo "2. Transferring $n random binary file(s)"
 for ((i=1; i<=$n; i++))
 do
-	time python ../client.py --server_ip $ip --id $id --f ./file$i.bin
+	{ time python ../client.py --server_ip $ip --id $id --f ./file$i.bin; } > result.txt 2> time.txt
 done
 
 echo "closing..."
